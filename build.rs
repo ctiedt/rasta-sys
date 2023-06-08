@@ -6,6 +6,9 @@ fn main() {
 
     println!("cargo:rerun-if-changed=rasta-sys");
 
+    // Right now, we have to overwrite the cmake options because librasta will not compile with -Werror.
+    std::fs::copy(concat!(env!("CARGO_MANIFEST_DIR"), "/CompileOptions.cmake"), "rasta-protocol/cmake/CompileOptions.cmake").expect("Failed to copy CmakeOptions file");
+
     let mut dst = cmake::build("rasta-protocol");
     dst.push("lib");
 
