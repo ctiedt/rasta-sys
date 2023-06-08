@@ -1,10 +1,10 @@
 use std::{env, path::PathBuf};
 
 fn main() {
-    println!("cargo:rerun-if-changed=rasta-sys");
+    // these headers cause problems with circular includes, so we don't generate bindings for them
+    let disallowed_headers = vec!["fifo.h".into(), "rastaredundancy.h".into()];
 
-    // Right now, we have to overwrite the cmake options because librasta will not compile with -Werror.
-    std::fs::copy(concat!(env!("CARGO_MANIFEST_DIR"), "/CompileOptions.cmake"), "rasta-protocol/cmake/CompileOptions.cmake").expect("Failed to copy CmakeOptions file");
+    println!("cargo:rerun-if-changed=rasta-sys");
 
     let mut dst = cmake::build("rasta-protocol");
     dst.push("lib");
@@ -17,7 +17,9 @@ fn main() {
         std::fs::read_dir("rasta-protocol/src/include/rasta").expect("Failed to read directory")
     {
         let header = header.unwrap();
-        bindings = bindings.header(header.path().to_string_lossy());
+        if !disallowed_headers.contains(&header.file_name().to_string_lossy().into_owned()) {
+            bindings = bindings.header(header.path().to_string_lossy());
+        }
     }
 
     let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
