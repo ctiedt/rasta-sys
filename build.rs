@@ -1,6 +1,9 @@
 use std::{env, path::PathBuf};
 
 fn main() {
+    // these headers cause problems with circular includes, so we don't generate bindings for them
+    let disallowed_headers = vec!["fifo.h".into(), "rastaredundancy.h".into()];
+
     println!("cargo:rerun-if-changed=rasta-sys");
 
     // Right now, we have to overwrite the cmake options because librasta will not compile with -Werror.
@@ -12,19 +15,14 @@ fn main() {
     println!("cargo:rustc-link-search=native={}", dst.display());
     println!("cargo:rustc-link-lib=dylib=rasta");
 
-    let mut bindings = bindgen::Builder::default().clang_arg("-Irasta-protocol/src/rasta/headers");
+    let mut bindings = bindgen::Builder::default().clang_arg("-Irasta-protocol/src/include/");
     for header in
-        std::fs::read_dir("rasta-protocol/src/rasta/headers").expect("Failed to read directory")
+        std::fs::read_dir("rasta-protocol/src/include/rasta").expect("Failed to read directory")
     {
         let header = header.unwrap();
-        bindings = bindings.header(header.path().to_string_lossy());
-    }
-
-    for header in
-        std::fs::read_dir("rasta-protocol/src/sci/headers").expect("Failed to read directory")
-    {
-        let header = header.unwrap();
-        bindings = bindings.header(header.path().to_string_lossy());
+        if !disallowed_headers.contains(&header.file_name().to_string_lossy().into_owned()) {
+            bindings = bindings.header(header.path().to_string_lossy());
+        }
     }
 
     let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
