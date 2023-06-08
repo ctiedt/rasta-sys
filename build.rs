@@ -12,16 +12,9 @@ fn main() {
     println!("cargo:rustc-link-search=native={}", dst.display());
     println!("cargo:rustc-link-lib=dylib=rasta");
 
-    let mut bindings = bindgen::Builder::default().clang_arg("-Irasta-protocol/src/rasta/headers");
+    let mut bindings = bindgen::Builder::default().clang_arg("-Irasta-protocol/src/include/");
     for header in
-        std::fs::read_dir("rasta-protocol/src/rasta/headers").expect("Failed to read directory")
-    {
-        let header = header.unwrap();
-        bindings = bindings.header(header.path().to_string_lossy());
-    }
-
-    for header in
-        std::fs::read_dir("rasta-protocol/src/sci/headers").expect("Failed to read directory")
+        std::fs::read_dir("rasta-protocol/src/include/rasta").expect("Failed to read directory")
     {
         let header = header.unwrap();
         bindings = bindings.header(header.path().to_string_lossy());
